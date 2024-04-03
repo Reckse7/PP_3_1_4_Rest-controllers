@@ -1,41 +1,27 @@
 package ru.kata.spring.boot_security.demo.model;
 
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 
 import javax.persistence.*;
-import javax.validation.constraints.Email;
-import javax.validation.constraints.Min;
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.Size;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 @Entity
 @Table(name = "users")
-public class User implements UserDetails {
+public class User {
+        //implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @NotEmpty(message = "First name should not be empty")
-    @Size(max = 32, message = "First name should be shorter than 32 characters")
     private String firstName;
 
-    @NotEmpty(message = "Last name should not be empty")
-    @Size(max = 32, message = "Last name should be shorter than 32 characters")
     private String lastName;
 
-    @NotEmpty(message = "Email should not be empty")
-    @Email(message = "Email should be valid")
     private String email;
 
-    @Min(value = 0, message = "Age should be greater than 0")
     private int age;
 
-    @NotEmpty(message = "Password should not be empty")
     private String userPassword;
 
     @OneToMany(mappedBy = "user", cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE})
@@ -113,7 +99,7 @@ public class User implements UserDetails {
         this.roles = roles;
     }
 
-    @Override
+  /*  @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return new ArrayList<GrantedAuthority>(roles);
     }
@@ -146,5 +132,5 @@ public class User implements UserDetails {
     @Override
     public boolean isEnabled() {
         return true;
-    }
+    }*/
 }

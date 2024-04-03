@@ -1,61 +1,80 @@
 package ru.kata.spring.boot_security.demo.controller;
 
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.ModelMap;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import ru.kata.spring.boot_security.demo.model.Role;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.annotation.*;
+import ru.kata.spring.boot_security.demo.dto.UserDTO;
 import ru.kata.spring.boot_security.demo.model.User;
 import ru.kata.spring.boot_security.demo.service.UserService;
+import ru.kata.spring.boot_security.demo.util.UserNotSavedException;
 
 import javax.validation.Valid;
 import java.util.List;
 
-@Controller
+@RestController
 public class UserController {
 
-    private UserService service;
+    private final UserService service;
+    private final ModelMapper modelMapper;
 
     @Autowired
-    public void setUserService(UserService service) {
+    public UserController(UserService service, ModelMapper modelMapper) {
         this.service = service;
+        this.modelMapper = modelMapper;
     }
 
     @GetMapping("/user")
-    public String userPage(ModelMap model) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        model.addAttribute("authUser", authentication.getPrincipal());
-        return "user";
+    public UserDTO userPage() {
+        //Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        //return (User) authentication.getPrincipal();
+        return convertToUserDTO(service.getById(16));
+    }
+
+    @GetMapping("/user/{id}")
+    public UserDTO getUser(@PathVariable int id) {
+        return convertToUserDTO(service.getById(id));
     }
 
     @GetMapping("/admin")
-    public String printUsers(ModelMap model) {
-        List<User> list = service.getAllUsers();
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        model.addAttribute("users", list);
-        model.addAttribute("authUser", authentication.getPrincipal());
-        return "admin";
+    public List<UserDTO> getUserList() {
+        return service.getAllUsers().stream().map(this::convertToUserDTO).toList();
     }
 
     @PostMapping("/admin/save")
-    public String editUser(@ModelAttribute("user") @Valid User user, BindingResult bindingResult,
-                           @ModelAttribute("role") Role role) {
+    public ResponseEntity<HttpStatus> saveUser(@RequestBody @Valid UserDTO userDTO, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
-                return "redirect:/admin";
+            StringBuilder errorMassage = new StringBuilder();
+            List<FieldError> errors = bindingResult.getFieldErrors();
+            for (FieldError error : errors) {
+                errorMassage.append(error.getField()).append(": ")
+                        .append(error.getDefaultMessage()).append("; ");
+            }
+            throw new UserNotSavedException(errorMassage.toString());
         }
-        service.save(user, role);
-        return "redirect:/admin";
+        service.save(convertToUser(userDTO));
+        return ResponseEntity.ok(HttpStatus.OK);
     }
 
-    @GetMapping("/admin/delete")
-    public String deleteUser(@RequestParam int id) {
+    @DeleteMapping("/admin/delete/{id}")
+    public ResponseEntity<HttpStatus> deleteUser(@PathVariable int id) {
         service.delete(id);
-        return "redirect:/admin";
+        return ResponseEntity.ok(HttpStatus.OK);
+    }
+
+    @ExceptionHandler
+    private ResponseEntity<String> handleException(UserNotSavedException e) {
+        return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+    }
+
+    private UserDTO convertToUserDTO(User user) {
+        return modelMapper.map(user, UserDTO.class);
+    }
+
+    private User convertToUser(UserDTO userDTO) {
+        return modelMapper.map(userDTO, User.class);
     }
 }
