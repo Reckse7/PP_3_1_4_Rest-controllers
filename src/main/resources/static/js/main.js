@@ -11,6 +11,8 @@ const userFetchService = {
     deleteUser: async (id) => await fetch(`/admin/delete/${id}`, {method: 'DELETE', headers: userFetchService.head})
 }
 
+const REGEXP = /^(([^<>()[\].,;:\s@"]+(\.[^<>()[\].,;:\s@"]+)*)|(".+"))@(([^<>()[\].,;:\s@"]+\.)+[^<>()[\].,;:\s@"]{2,})$/iu;
+
 class User {
     constructor(id, firstName, lastName, age, email, userPassword, roleId, roleName) {
         this.id = id;
@@ -29,7 +31,6 @@ class User {
 async function getAuth() {
     let response = await userFetchService.getAuthUser();
     let authUser = await response.json();
-    console.log(authUser);
     const authEmail = document.querySelector('#authEmail');
     const authRoles = document.querySelector('#authRoles');
     const authInfo = document.querySelector('#authInfo');
@@ -46,23 +47,21 @@ async function getAuth() {
         document.querySelector("#v-pills-home").remove();
         document.querySelector("#v-pills-home-tab").remove();
     }
-    
 }
 
 async function handlerUserButton(event) {
     let id = Number(event.target.dataset.index);
     if (id) {
-        console.log(id);
         let typeButton = event.target.dataset.type;
-        console.log(typeButton);
         let response = await userFetchService.getUser(id);
         let user = await response.json();
-        console.log(user);
-        if (typeButton == 'edit') {
-            inputModal(user, document.querySelector('#editForm'));
+        if (typeButton === 'edit') {
+            const editForm = document.querySelector('#editForm')
+            clearValidateMsg(editForm.elements);
+            inputModal(user, editForm);
             const editBtn = document.querySelector('#editBtn');
             editBtn.addEventListener('click', handlerEditButton);
-        } else if (typeButton == 'delete') {
+        } else if (typeButton === 'delete') {
             inputModal(user, document.querySelector('#deleteForm'));
             const deleteBtn = document.querySelector('#deleteBtn');
             deleteBtn.addEventListener('click', handlerDeleteButton);
@@ -73,19 +72,21 @@ async function handlerUserButton(event) {
 async function handlerEditButton(event) {
     event.preventDefault();
     const elements = event.target.form.elements;
+    if (!validateForm(elements)) {
+        return;
+    }
     const data = new User(elements.id.value, elements.firstName.value, elements.lastName.value, elements.age.value,
-        elements.email.value, elements.userPassword.value, elements.roleId.value, elements.name.value);
-    console.log(data);
+        elements.email.value.toLowerCase(), elements.userPassword.value, elements.roleId.value, elements.name.value);
     let response = await userFetchService.saveUser(data);
     console.log(response);
-
-    $('#editUser').modal('hide');
-    getUsers();
+    if (response.ok) {
+        $('#editUser').modal('hide');
+        getUsers();
+    }
 }
 
 async function handlerDeleteButton(event) {
     event.preventDefault();
-    console.log(event.target.form.id.value);
     const id = event.target.form.id.value;
     let response = await userFetchService.deleteUser(id);
     console.log(response);
@@ -96,15 +97,64 @@ async function handlerDeleteButton(event) {
 async function handlerAddButton(event) {
     event.preventDefault();
     const elements = event.target.form.elements;
+    if (!validateForm(elements)) {
+        return;
+    }
     const data = new User(null, elements.firstName.value, elements.lastName.value, elements.age.value, 
-        elements.email.value, elements.userPassword.value, null, elements.name.value);
-    console.log(data);
+        elements.email.value.toLowerCase(), elements.userPassword.value, null, elements.name.value);
     let response = await userFetchService.saveUser(data);
     console.log(response);
+    if (response.ok) {
+        clearAddForm();
+        $('#myTab a[href="#home"]').tab('show');
+        getUsers();
+    }
+}
 
-    $('#myTab a[href="#home"]').tab('show');
-    getUsers();
+function clearValidateMsg(formElements) {
+    formElements.firstName.classList.remove('is-invalid');
+    formElements.lastName.classList.remove('is-invalid');
+    formElements.age.classList.remove('is-invalid');
+    formElements.email.classList.remove('is-invalid');
+    formElements.userPassword.classList.remove('is-invalid');
+    formElements.name.classList.remove('is-invalid');
+}
 
+function validateForm(formElements) {
+    let check = true;
+    clearValidateMsg(formElements);
+    if (formElements.firstName.value.length < 1) {
+        formElements.firstName.classList.add('is-invalid');
+        check = false;
+    }
+    if (formElements.lastName.value.length < 1) {
+        formElements.lastName.classList.add('is-invalid');
+        check = false;
+    }
+    if (Number(formElements.age.value) < 1) {
+        formElements.age.classList.add('is-invalid');
+        check = false;
+    }
+    if (!REGEXP.test(formElements.email.value)) {
+        formElements.email.classList.add('is-invalid');
+        check = false;
+    }
+    if (formElements.userPassword.value.length < 1) {
+        formElements.userPassword.classList.add('is-invalid');
+        check = false;
+    }
+    if (formElements.name.value.length < 1) {
+        formElements.name.classList.add('is-invalid');
+        check = false;
+    }
+    return check;
+}
+
+function clearAddForm() {
+    const addForm = document.querySelector('#addForm');
+    for (let i = 0; i < 6; i++) {
+        addForm[i].value = '';
+    }
 }
 
 function setUserRow(columns, thisUser) {
@@ -117,7 +167,6 @@ function setUserRow(columns, thisUser) {
 }
 
 function inputModal(user, element) {
-    console.log(user, element);
     element[0].value = user.id;
     element[1].value = user.firstName;
     element[2].value = user.lastName;
@@ -139,7 +188,6 @@ function getRoles(listRoles) {
 async function getUsers() {
     let response = await userFetchService.getAllUsers();
     let listUsers = await response.json();
-    console.log(listUsers);
     const userTable = document.querySelector('#userTable');
     const userRow = document.querySelector('#userRow');
     userTable.innerHTML = '';

@@ -1,14 +1,17 @@
 package ru.kata.spring.boot_security.demo.model;
 
 
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
 import javax.persistence.*;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 @Entity
 @Table(name = "users")
-public class User {
-        //implements UserDetails {
+public class User implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -99,7 +102,7 @@ public class User {
         this.roles = roles;
     }
 
-  /*  @Override
+    @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return new ArrayList<GrantedAuthority>(roles);
     }
@@ -132,5 +135,5 @@ public class User {
     @Override
     public boolean isEnabled() {
         return true;
-    }*/
+    }
 }

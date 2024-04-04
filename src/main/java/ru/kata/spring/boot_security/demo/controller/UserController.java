@@ -4,6 +4,8 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
@@ -29,9 +31,8 @@ public class UserController {
 
     @GetMapping("/user")
     public UserDTO userPage() {
-        //Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        //return (User) authentication.getPrincipal();
-        return convertToUserDTO(service.getById(16));
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return convertToUserDTO((User) authentication.getPrincipal());
     }
 
     @GetMapping("/user/{id}")
@@ -50,8 +51,8 @@ public class UserController {
             StringBuilder errorMassage = new StringBuilder();
             List<FieldError> errors = bindingResult.getFieldErrors();
             for (FieldError error : errors) {
-                errorMassage.append(error.getField()).append(": ")
-                        .append(error.getDefaultMessage()).append("; ");
+                errorMassage.append(error.getField()).append(", ")
+                        .append(error.getDefaultMessage()).append(", ");
             }
             throw new UserNotSavedException(errorMassage.toString());
         }
