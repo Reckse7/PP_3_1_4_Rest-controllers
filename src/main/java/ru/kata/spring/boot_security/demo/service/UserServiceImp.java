@@ -61,4 +61,10 @@ public class UserServiceImp implements UserService {
         Hibernate.initialize(user.get().getRoles());
         return user.get();
     }
+
+    @Transactional(readOnly = true)
+    @Override
+    public Optional<User> getByEmail(String email) {
+        return userRepository.findByEmail(email);
+    }
 }
