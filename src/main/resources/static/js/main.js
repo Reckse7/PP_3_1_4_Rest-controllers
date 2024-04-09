@@ -6,9 +6,9 @@ const userFetchService = {
     },
     getAllUsers: async () => await fetch('/admin'),
     getAuthUser: async () => await fetch('/user'),
-    getUser: async (id) => await fetch(`/user/${id}`),
-    saveUser: async (user) => await fetch('/admin/save', {method: 'POST', headers: userFetchService.head, body: JSON.stringify(user)}),
-    deleteUser: async (id) => await fetch(`/admin/delete/${id}`, {method: 'DELETE', headers: userFetchService.head})
+    getUser: async (id) => await fetch(`/admin/${id}`),
+    saveUser: async (user) => await fetch('/admin', {method: 'POST', headers: userFetchService.head, body: JSON.stringify(user)}),
+    deleteUser: async (id) => await fetch(`/admin/${id}`, {method: 'DELETE', headers: userFetchService.head})
 }
 
 const REGEXP = /^(([^<>()[\].,;:\s@"]+(\.[^<>()[\].,;:\s@"]+)*)|(".+"))@(([^<>()[\].,;:\s@"]+\.)+[^<>()[\].,;:\s@"]{2,})$/iu;
@@ -76,7 +76,7 @@ async function handlerEditButton(event) {
         return;
     }
     const data = new User(elements.id.value, elements.firstName.value, elements.lastName.value, elements.age.value,
-        elements.email.value.toLowerCase(), elements.userPassword.value, elements.roleId.value, elements.name.value);
+            elements.email.value.toLowerCase(), elements.userPassword.value, elements.roleId.value, elements.name.value);
     let response = await userFetchService.saveUser(data);
     console.log(response);
     if (response.ok) {

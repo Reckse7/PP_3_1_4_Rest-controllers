@@ -6,7 +6,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
@@ -25,14 +24,12 @@ public class UserController {
 
     private final UserService service;
     private final ModelMapper modelMapper;
-    private final PasswordEncoder encoder;
     private final UserValidator userValidator;
 
     @Autowired
-    public UserController(UserService service, ModelMapper modelMapper, PasswordEncoder encoder, UserValidator userValidator) {
+    public UserController(UserService service, ModelMapper modelMapper, UserValidator userValidator) {
         this.service = service;
         this.modelMapper = modelMapper;
-        this.encoder = encoder;
         this.userValidator = userValidator;
     }
 
@@ -42,7 +39,7 @@ public class UserController {
         return convertToUserDTO((User) authentication.getPrincipal());
     }
 
-    @GetMapping("/user/{id}")
+    @GetMapping("/admin/{id}")
     public UserDTO getUser(@PathVariable int id) {
         return convertToUserDTO(service.getById(id));
     }
@@ -52,7 +49,7 @@ public class UserController {
         return service.getAllUsers().stream().map(this::convertToUserDTO).toList();
     }
 
-    @PostMapping("/admin/save")
+    @PostMapping("/admin")
     public ResponseEntity<HttpStatus> saveUser(@RequestBody @Valid UserDTO userDTO, BindingResult bindingResult) {
         userValidator.validate(userDTO, bindingResult);
         if (bindingResult.hasErrors()) {
@@ -64,12 +61,11 @@ public class UserController {
             }
             throw new UserNotSavedException(errorMassage.toString());
         }
-        userDTO.setUserPassword(encoder.encode(userDTO.getUserPassword()));
         service.save(convertToUser(userDTO));
         return ResponseEntity.ok(HttpStatus.OK);
     }
 
-    @DeleteMapping("/admin/delete/{id}")
+    @DeleteMapping("/admin/{id}")
     public ResponseEntity<HttpStatus> deleteUser(@PathVariable int id) {
         service.delete(id);
         return ResponseEntity.ok(HttpStatus.OK);

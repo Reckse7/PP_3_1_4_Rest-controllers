@@ -27,10 +27,10 @@ public class UserValidator implements Validator {
 
     @Override
     public void validate(Object target, Errors errors) {
-        UserDTO userDTO = (UserDTO) target;
-        Optional<User> user = userService.getByEmail(userDTO.getEmail());
+        UserDTO userToSave = (UserDTO) target;
+        Optional<User> user = userService.getByEmail(userToSave.getEmail());
         if (user.isPresent()) {
-            if (!user.get().getId().equals(userDTO.getId())) {
+            if (!user.get().getId().equals(userToSave.getId())) {
                 errors.rejectValue("email", "", "This email is already taken");
             }
         }
